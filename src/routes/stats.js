@@ -19,9 +19,9 @@ const router = express.Router();
 router.get('/stats', async (req, res) => {
   try {
     const { rows: pointsTable } = await query(
-      `SELECT t.short_name, t.team_name, pt.matches_played, pt.wins, pt.losses, pt.points, pt.nrr
+      `SELECT t.tname AS team_name, pt.matches_played, pt.wins, pt.losses, pt.points, pt.nrr
        FROM points_table pt
-       JOIN teams t ON pt.team_id = t.team_id
+       JOIN team t ON pt.team_id = t.team_id
        ORDER BY pt.points DESC, pt.nrr DESC`
     );
     const summary = await getDbSummary();

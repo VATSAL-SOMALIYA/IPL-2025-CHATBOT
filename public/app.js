@@ -24,7 +24,7 @@ async function fetchStats() {
     renderPointsTable(data.pointsTable || []);
     const s = data.summary || data.databaseSummary;
     if (s) {
-      matchesCount.textContent = `${s.matches || 0} Matches`;
+      matchesCount.textContent = `${s.match_details ?? s.matches ?? 0} Matches`;
     }
   } catch (err) {
     console.warn('Failed to load stats:', err);

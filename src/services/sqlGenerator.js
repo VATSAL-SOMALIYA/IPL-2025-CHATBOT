@@ -138,14 +138,27 @@ ${schemaSql}
 
 DIALECT: ${dialect === 'postgres' ? 'PostgreSQL' : 'SQLite'}
 
+TABLES & USAGE GUIDELINES:
+- team (team_id, tname, captain_id, home_ground)
+- venue (venue_id, city, state, grd_name)
+- players (player_id, batting_style, bowling_style, name, role, team_id, nationality)
+- match_details (match_id, match_date, toss_decision, status, team1, team2, toss_winner, venue, match_time)
+- playing_11 (match_id, player_id, team_id, is_substitute, substituted_out)
+- per_ball_data (ball_id, over_no, ball_no, of_match, inning_no, extras, wicket_no, total_score, run_scored, on_strike, off_strike, bowled_by, ball_speed, type_of_extra, striker_batting_position, boundary)
+- wickets (wicket_id, wicket_type, player_got_out, caught_by, run_out_by, on_ball, stumped_by)
+- player_performance_in_a_match (match_id, player_id, runs, balls_played, wickets_taken, balls_bowled, runs_conceded, fours, sixes, fours_conceded, sixes_conceded)
+- final_result (match_id, winner, loser, score_of_winner, score_of_loser, win_run_margin, win_wicket_margin, player_of_the_match)
+- match_officials (match_id, on_field1, on_field2, third_ump)
+- partnership (partnership_id, player1, player2, match_id, runs, partnership_no, inning_no)
+- points_table (team_id, matches_played, wins, losses, no_results, points, nrr)
+- users (user_id, password, last_access, date_of_sign_in)
+
 RULES:
-- In the matches table, match_id is sequentially numbered from 1 to 74 representing the IPL 2025 match number (Match 1 has match_id = 1, Match 2 has match_id = 2 ... Final has match_id = 74).
-- The matches table also contains match_name (e.g. '1st Match', '2nd Match', 'Qualifier 1', 'Eliminator', 'Qualifier 2', 'Final').
-- When a user asks for "match 1" or "match X", filter by match_id = X (or i.match_id = X on innings).
-- When a user asks for "scorecard of match X", join innings, deliveries, players, and teams on i.match_id = X to calculate player runs, balls, fours, sixes grouped by innings_number, player_name.
+- When a user asks for "match 1" or "match X", filter by match_details.match_id = X or per_ball_data.of_match = X.
+- When asking about player performance, query player_performance_in_a_match or aggregate from per_ball_data.
+- When asking about standings / points table, query points_table JOIN team ON points_table.team_id = team.team_id.
 - Use only existing tables and columns.
 - Use correct joins and aggregations.
-- Do not invent player names or statistics.
 - Return SQL only inside a \`\`\`sql ... \`\`\` block.
 - Never generate INSERT, UPDATE, DELETE, or DROP queries.
 - If the question cannot be answered from the schema, explain what information is missing.`;

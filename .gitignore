@@ -3,3 +3,4 @@ node_modules/
 *.sqlite-wal
 *.sqlite-shm
 .DS_Store
+BOT_EXPLANATION.md
