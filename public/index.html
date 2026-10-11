@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPL 2025 Database & AI Chatbot</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="icon">🏏</span>
+        <div>
+          <h1>IPL 2025 Database & AI Chatbot</h1>
+          <p class="subtitle">Complete IPL 2025 Ball-by-Ball Data • Live Dynamic Standings • Natural Language to SQL</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="grid">
+      <!-- Left Column: Points Table & Standings -->
+      <section class="card sidebar-card">
+        <div class="points-header">
+          <h2>🏆 Live Points Table</h2>
+          <span class="badge" id="matches-count">0 Matches</span>
+        </div>
+        <p class="card-desc">Updated dynamically after each match is entered.</p>
+
+        <div class="table-wrapper">
+          <table class="data-table" id="points-table">
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>P</th>
+                <th>W</th>
+                <th>L</th>
+                <th>Pts</th>
+                <th>NRR</th>
+              </tr>
+            </thead>
+            <tbody id="points-body">
+              <tr><td colspan="6" class="loading">Loading standings...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Right Column: Question → SQL → Answer -->
+      <section class="card chat-card">
+        <h2>💬 Question → SQL → Answer</h2>
+        <p class="card-desc">Ask cricket questions in plain English. The AI generates and runs SQL directly against your database.</p>
+
+        <!-- Quick Questions -->
+        <div class="quick-chips">
+          <button type="button" class="chip" onclick="askQuick('Give scorecard of match 1')">Match 1 Scorecard</button>
+          <button type="button" class="chip" onclick="askQuick('Who won the IPL 2025 Final?')">2025 Champion</button>
+          <button type="button" class="chip" onclick="askQuick('Which batter scored the most runs in IPL 2025?')">Orange Cap</button>
+          <button type="button" class="chip" onclick="askQuick('Which bowler took the most wickets in IPL 2025?')">Purple Cap</button>
+          <button type="button" class="chip" onclick="askQuick('Who hit the most sixes in IPL 2025?')">Most Sixes</button>
+        </div>
+
+        <!-- Chat History -->
+        <div class="chat-history" id="chat-history">
+          <div class="chat-bubble bot">
+            <p>👋 Hello! Ask any question about IPL 2025 matches, scorecards, players, standings, or venues.</p>
+            <p><em>Example: "Give scorecard of match 1", "Who scored the most runs against CSK?", or "Show the points table"</em></p>
+          </div>
+        </div>
+
+        <!-- Question Input -->
+        <form id="chat-form" onsubmit="handleChatSubmit(event)">
+          <input
+            type="text"
+            id="chat-input"
+            placeholder="e.g. Give scorecard of match 1 or Who scored a century in IPL 2025?"
+            autocomplete="off"
+            required
+          />
+          <button type="submit" id="ask-btn" class="btn btn-primary">
+            <span>Ask</span> ➔
+          </button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
