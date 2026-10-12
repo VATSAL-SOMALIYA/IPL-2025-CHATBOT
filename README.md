@@ -1,138 +1,86 @@
-# 🏏 IPL 2025 Database & AI Chatbot
+# 🏏 IPL 2025 Database Management System & AI Text-to-SQL Chatbot
 
-A production-ready JavaScript full-stack application for querying complete **IPL 2025 ball-by-ball match data** using Natural Language to SQL, powered by **LangChain.js** and **Groq AI** (with Google Gemini fallback), featuring dynamic points table standings and full support for **Aiven PostgreSQL**.
+An enterprise-grade, BCNF-normalized Relational Database Management System (DBMS) and Conversational AI Chatbot for querying complete **IPL 2025 tournament data** (Matches 1 to 74) in natural language. Powered by **Node.js**, **Express**, **LangChain.js**, and **Groq LPU AI** (with Google Gemini fallback).
 
----
-
-## 🌟 Key Features
-
-1. **Complete Authentic IPL 2025 Dataset**:
-   - **74 Matches**: Full tournament coverage from Match 1 (KKR vs RCB) to Match 74 (Final: RCB vs PBKS).
-   - **16,514 Ball-by-Ball Deliveries**: Authentic player stats, runs, balls, boundaries (4s & 6s), wickets, and commentary extracted directly from Cricbuzz official scorecards.
-   - **226 Players & 16 Host Venues**: Real squad rosters and stadiums.
-
-2. **Live Dynamic Points Table**:
-   - Matches played, wins, losses, points, and Net Run Rate (NRR) calculated dynamically match-by-match.
-
-3. **Natural Language to SQL Chatbot**:
-   - Ask cricket questions in plain English (*"Give scorecard of match 5"*, *"Who won the final?"*, *"Which batter hit the most sixes?"*).
-   - Translates questions into validated, read-only SQL queries using **Groq** (with automatic **Gemini** fallback).
-   - Executes SQL directly against the database and displays formatted results and tables.
-
-4. **Dual Database Architecture**:
-   - **SQLite**: Zero-configuration local database (`ipl_database.sqlite`).
-   - **Aiven Cloud PostgreSQL**: Seamless migration via `DATABASE_URL` or the generated standalone SQL dump (`aiven_ipl2025_dump.sql`).
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/VATSAL-SOMALIYA/IPL-2025-CHATBOT)
+[![Database](https://img.shields.io/badge/Database-SQLite%20%7C%20PostgreSQL-green?logo=postgresql)](https://github.com/VATSAL-SOMALIYA/IPL-2025-CHATBOT)
+[![AI Engine](https://img.shields.io/badge/AI-Groq%20%7C%20Gemini-orange?logo=openai)](https://github.com/VATSAL-SOMALIYA/IPL-2025-CHATBOT)
 
 ---
 
-## 🏗️ Architecture
+## 📌 Project Overview
 
-```
-User asks a question in English ("Give scorecard of match 5")
-                        │
-                        ▼
-           Frontend Web UI (HTML / CSS / JS)
-                        │
-                        ▼
-            Express.js Server (`POST /api/chat`)
-                        │
-                        ▼
-     LangChain.js + AI Model (Groq / Gemini)
-     (Database schema + prompt -> SQL SELECT query)
-                        │
-                        ▼
-         SQL Query Validator (Read-only Guardrail)
-                        │
-                        ▼
-          Database Engine (SQLite / PostgreSQL)
-        Matches · Innings · Deliveries · Players · Standings
-                        │
-                        ▼
-   Interactive Answer + SQL Code Card + Results Table
-```
+This project bridges traditional relational database systems and modern generative AI by translating natural language cricket queries into syntactically valid, read-only SQL statements. Users can ask questions in plain English—from match scorecards and dismissal modes to player economy rates and net run rate (NRR) calculations—and receive instant query execution with structured data visualization.
+
+The database models the entire 2025 Indian Premier League season containing authentic ball-by-ball commentary, player rosters, venues, wickets, partnerships, and match results.
 
 ---
 
-## 📁 Project Structure
+## 🏛️ Database Architecture & Normalization
+
+The database adheres to **Boyce-Codd Normal Form (BCNF)** to eliminate data redundancy and ensure relational integrity across **13 relational tables**:
+
+| Table Name | Description | Key Attributes |
+|---|---|---|
+| **`match_details`** | Schedule, status, toss decision, and timings for all 74 matches | `match_id`, `match_date`, `toss_decision`, `status`, `team1`, `team2`, `toss_winner`, `venue`, `match_time` |
+| **`per_ball_data`** | Ball-by-ball deliveries (16,514 records) with runs, extras, and speeds | `ball_id`, `over_no`, `ball_no`, `of_match`, `inning_no`, `extras`, `wicket_no`, `total_score`, `run_scored`, `on_strike`, `off_strike`, `bowled_by`, `ball_speed`, `boundary` |
+| **`wickets`** | Detailed dismissal records linked to individual deliveries | `wicket_id`, `wicket_type`, `player_got_out`, `caught_by`, `run_out_by`, `on_ball`, `stumped_by` |
+| **`final_result`** | Official match outcomes, margins, and Player of the Match awards | `match_id`, `winner`, `loser`, `score_of_winner`, `score_of_loser`, `win_run_margin`, `win_wicket_margin`, `player_of_the_match` |
+| **`player_performance_in_a_match`** | Aggregated match metrics per player | `match_id`, `player_id`, `runs`, `balls_played`, `wickets_taken`, `balls_bowled`, `runs_conceded`, `fours`, `sixes` |
+| **`partnership`** | Wicket-by-wicket partnership runs and progressions | `partnership_id`, `player1`, `player2`, `match_id`, `runs`, `partnership_no`, `inning_no` |
+| **`playing_11`** | Match appearances and player participation records | `match_id`, `player_id`, `team_id`, `is_substitute`, `substituted_out` |
+| **`players`** | Master directory of tournament players | `player_id`, `name`, `batting_style`, `bowling_style`, `role`, `team_id`, `nationality` |
+| **`team`** | Franchise profiles, captain mappings, and home grounds | `team_id`, `tname`, `captain_id`, `home_ground` |
+| **`venue`** | Host stadiums, cities, and states | `venue_id`, `grd_name`, `city`, `state` |
+| **`points_table`** | Dynamically updated standings with Net Run Rate (NRR) | `team_id`, `matches_played`, `wins`, `losses`, `no_results`, `points`, `nrr` |
+| **`match_officials`** | On-field umpires and third umpires per match | `match_id`, `on_field1`, `on_field2`, `third_ump` |
+| **`users`** | Authentication and access audit log | `user_id`, `password`, `last_access`, `date_of_sign_in` |
+
+---
+
+## ⚡ Technical Stack
+
+- **Backend Runtime**: Node.js (ES Modules), Express.js
+- **Database Engine**: SQLite (Embedded via Node.js `DatabaseSync`) / PostgreSQL (Cloud compatibility)
+- **AI / LLM Framework**: LangChain.js
+- **Primary AI Model**: Groq LPU Inference Engine (`openai/gpt-oss-120b`) for ultra-low latency inference
+- **Fallback AI Model**: Google Gemini (`gemini-3.5-flash`) for multi-tier failover
+- **Frontend Interface**: HTML5, CSS3, Vanilla JavaScript (responsive dark-themed dashboard)
+
+---
+
+## 🛡️ Security & Guardrails
+
+1. **Strict Read-Only Enforcement**: The query execution pipeline validates all AI-generated SQL using AST parsing and regular expressions, rejecting any destructive statements (`DROP`, `TRUNCATE`, `ALTER`, `DELETE`, `INSERT`, `UPDATE`).
+2. **SQL Injection Mitigation**: All parameterized and validated queries execute in a controlled database sandbox.
+3. **Dual Model Failover**: If the primary AI provider encounters rate limits or service disruptions, the system automatically switches to the secondary model without user-facing interruptions.
+
+---
+
+## 📂 Project Structure
 
 ```
 IPL-2025-CHATBOT/
 ├── src/
-│   ├── db.js                      # PostgreSQL (Aiven) & SQLite universal adapter
-│   ├── schema.sql                 # Relational schema (teams, venues, players, matches, innings, deliveries, points_table)
-│   ├── exportToAiven.js           # Exporter to Aiven Cloud PostgreSQL & SQL dump generator
+│   ├── db.js                      # Database adapter & connection manager
+│   ├── schema.sql                 # 13-table BCNF relational schema DDL
+│   ├── server.js                  # Express.js server & API bootstrap
 │   ├── routes/
-│   │   ├── chat.js                # POST /api/chat (Text-to-SQL endpoint)
+│   │   ├── chat.js                # POST /api/chat (Natural language to SQL pipeline)
 │   │   └── stats.js               # GET /api/stats (Database summary & points table)
-│   ├── services/
-│   │   ├── insertDeliveries.js    # Foreign key resolvers & dynamic NRR calculator
-│   │   └── sqlGenerator.js        # LangChain.js AI Text-to-SQL generator (Groq + Gemini)
-│   └── server.js                  # Express.js application entry point
+│   └── services/
+│       └── sqlGenerator.js        # Multi-model LangChain.js Text-to-SQL engine
 ├── public/
-│   ├── index.html                 # Web dashboard UI
-│   ├── style.css                  # Modern dark theme styling
-│   └── app.js                     # Frontend interactive chat & standings logic
-├── aiven_ipl2025_dump.sql         # 1.95 MB standalone SQL dump for Aiven PostgreSQL
-├── ipl2025_cricbuzz_scorecards.json # Authentic raw Cricbuzz scorecard data for all 74 matches
-├── populate_authentic_ipl2025.js  # Database populator script
-├── G4-T1_DDL_script.txt           # Project DDL schema reference
-├── .env.example                   # Environment configuration template
-├── .gitignore                     # Git ignore rules (protects credentials)
-└── package.json                   # Dependencies and scripts
+│   ├── index.html                 # Interactive chat dashboard UI
+│   ├── style.css                  # Modern UI styling & responsive layout
+│   └── app.js                     # Frontend event handling & API integration
+├── ipl_database.sqlite            # Complete dataset (74 matches, 16,514 deliveries)
+├── package.json                   # Project dependencies and startup scripts
+└── README.md                      # Project documentation & architectural specs
 ```
-
----
-
-## 🚀 Quickstart
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Configure Environment (`.env`)
-Create a `.env` file from `.env.example`:
-```env
-# AI Model (Free API key from https://console.groq.com)
-GROQ_API_KEY=your_groq_api_key_here
-GROQ_MODEL=openai/gpt-oss-120b
-
-# Google Gemini (Optional fallback)
-GEMINI_API_KEY=your_gemini_key_here
-GEMINI_MODEL=gemini-3.5-flash
-
-# Database: Leave empty for local SQLite (zero-config), or paste your Aiven PostgreSQL URL:
-DATABASE_URL=
-```
-
-### 3. Populate Database (If starting clean)
-```bash
-npm run populate-db
-```
-*Populates all 74 matches, 16,514 deliveries, and computes the points table.*
-
-### 4. Start Application
-```bash
-npm start
-```
-Open **`http://localhost:3000`** in your browser.
-
----
-
-## 🐘 Export to Aiven Cloud PostgreSQL
-
-When you create your Aiven PostgreSQL service:
-1. Paste your service URI into `.env`:
-   ```env
-   DATABASE_URL=postgres://avnadmin:password@host:port/defaultdb?sslmode=require
-   ```
-2. Run the migration script:
-   ```bash
-   npm run export-to-aiven
-   ```
-   *Or execute `aiven_ipl2025_dump.sql` directly inside the Aiven Web Console.*
 
 ---
 
 ## 📜 License
-ISC License
+
+ISC License — Developed by [Vatsal Somaliya](https://github.com/VATSAL-SOMALIYA).
