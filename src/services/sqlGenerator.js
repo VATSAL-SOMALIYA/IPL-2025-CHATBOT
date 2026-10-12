@@ -153,10 +153,44 @@ TABLES & USAGE GUIDELINES:
 - points_table (team_id, matches_played, wins, losses, no_results, points, nrr)
 - users (user_id, password, last_access, date_of_sign_in)
 
-RULES:
+CRICKET TERMINOLOGY & CALCULATION RULES:
+1. Bowling Economy Rate:
+   - Formula: (Runs Conceded * 6.0) / Balls Bowled
+   - In SQL: ROUND((SUM(ppm.runs_conceded) * 6.0) / NULLIF(SUM(ppm.balls_bowled), 0), 2) AS economy_rate
+   - When asked for "best economy" / "economy list of season":
+     Filter by minimum qualification to exclude part-timers (e.g. HAVING SUM(ppm.balls_bowled) >= 60 for the tournament, or >= 12 in a single match).
+     Order by economy_rate ASC.
+2. Batting Strike Rate:
+   - Formula: (Runs Scored * 100.0) / Balls Faced
+   - In SQL: ROUND((SUM(ppm.runs) * 100.0) / NULLIF(SUM(ppm.balls_played), 0), 2) AS strike_rate
+3. Bowling Average:
+   - Formula: Runs Conceded / Wickets Taken
+   - In SQL: ROUND((SUM(ppm.runs_conceded) * 1.0) / NULLIF(SUM(ppm.wickets_taken), 0), 2) AS bowling_average
+4. Bowling Strike Rate:
+   - Formula: Balls Bowled / Wickets Taken
+   - In SQL: ROUND((SUM(ppm.balls_bowled) * 1.0) / NULLIF(SUM(ppm.wickets_taken), 0), 2) AS bowling_strike_rate
+5. Orange Cap / Most Runs of the Season:
+   - SUM(ppm.runs) AS total_runs FROM player_performance_in_a_match ppm GROUP BY ppm.player_id ORDER BY total_runs DESC LIMIT 10
+6. Purple Cap / Most Wickets of the Season:
+   - SUM(ppm.wickets_taken) AS total_wickets FROM player_performance_in_a_match ppm GROUP BY ppm.player_id ORDER BY total_wickets DESC LIMIT 10
+7. Most Sixes / Most Fours:
+   - SUM(ppm.sixes) AS total_sixes, SUM(ppm.fours) AS total_fours
+8. Best Bowling Figures:
+   - In a match: ORDER BY ppm.wickets_taken DESC, ppm.runs_conceded ASC LIMIT 10
+9. Dot Balls:
+   - Deliveries in per_ball_data where run_scored = 0 AND extras = 0
+10. Match Winner & Margin:
+    - In final_result: win_run_margin is set when the winning team defended (batted first); win_wicket_margin is set when the winning team chased (batted second).
+11. Standings / Points Table:
+    - Query points_table JOIN team ON points_table.team_id = team.team_id ORDER BY points DESC, nrr DESC.
+
+CRITICAL SQL SYNTAX RULES:
+- Write standard ANSI SQL compatible with both PostgreSQL and SQLite.
+- DO NOT use PostgreSQL-specific type casting like "::numeric" or "::text". Use standard "CAST(x AS FLOAT)" or multiply by "1.0" (e.g. "1.0 * x / y").
+- Always protect divisions with "NULLIF(divisor, 0)" to prevent divide-by-zero errors.
+- Always JOIN players table to display player names ("p.name").
+- Always JOIN team table to display team names ("t.tname").
 - When a user asks for "match 1" or "match X", filter by match_details.match_id = X or per_ball_data.of_match = X.
-- When asking about player performance, query player_performance_in_a_match or aggregate from per_ball_data.
-- When asking about standings / points table, query points_table JOIN team ON points_table.team_id = team.team_id.
 - Use only existing tables and columns.
 - Use correct joins and aggregations.
 - Return SQL only inside a \`\`\`sql ... \`\`\` block.

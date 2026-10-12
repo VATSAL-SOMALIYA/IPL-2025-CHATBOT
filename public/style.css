@@ -331,3 +331,118 @@ input[type="text"]:focus {
   border: 1px solid var(--border);
   border-radius: 6px;
 }
+
+/* Error Card in Chat Bubble */
+.chat-bubble.error-bubble {
+  border-left: 4px solid var(--danger);
+  background-color: rgba(239, 68, 68, 0.08);
+  max-width: 95%;
+}
+
+.error-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.error-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-icon {
+  font-size: 1.2rem;
+}
+
+.error-title {
+  color: var(--danger);
+  font-size: 0.95rem;
+}
+
+.error-msg {
+  color: #fca5a5;
+  font-size: 0.88rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.error-troubleshoot {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+.error-troubleshoot strong {
+  color: #fca5a5;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.error-troubleshoot ul {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.5;
+}
+
+.error-troubleshoot li {
+  margin-bottom: 5px;
+}
+
+.error-troubleshoot code {
+  background: #0f172a;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #38bdf8;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.error-actions {
+  margin-top: 4px;
+}
+
+.btn-retry {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+.btn-retry:hover {
+  background: #b91c1c;
+}
+
+.error-details {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.error-details summary {
+  cursor: pointer;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.error-details code {
+  display: block;
+  padding: 6px 10px;
+  background: #0b0f19;
+  border-radius: 4px;
+  color: #f87171;
+  font-family: var(--font-mono);
+  word-break: break-all;
+  white-space: pre-wrap;
+}

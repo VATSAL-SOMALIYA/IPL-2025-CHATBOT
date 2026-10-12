@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 async function fetchStats() {
   try {
     const res = await fetch('/api/stats');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     renderPointsTable(data.pointsTable || []);
     const s = data.summary || data.databaseSummary;
@@ -28,6 +29,7 @@ async function fetchStats() {
     }
   } catch (err) {
     console.warn('Failed to load stats:', err);
+    pointsBody.innerHTML = '<tr><td colspan="6" class="loading" style="color: #fca5a5;">⚠️ Standings loading paused — server waking up or connecting...</td></tr>';
   }
 }
 
@@ -78,17 +80,29 @@ async function handleChatSubmit(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question })
     });
+
+    if (!res.ok) {
+      let errText = `Server HTTP ${res.status}: ${res.statusText}`;
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.error) {
+          errText = errJson.error;
+        }
+      } catch (_) {}
+      throw new Error(errText);
+    }
+
     const data = await res.json();
     loadingDiv.remove();
 
     if (data.success) {
       appendBotResponse(data);
     } else {
-      appendBotError(data.error);
+      appendBotError(data.error || 'Failed to process question.', question);
     }
   } catch (err) {
     loadingDiv.remove();
-    appendBotError(err.message);
+    appendBotError(err.message, question);
   } finally {
     askBtn.disabled = false;
   }
@@ -149,13 +163,64 @@ function appendBotResponse(data) {
   chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
-function appendBotError(errorMsg) {
+function appendBotError(errorMsg, failedQuestion = '') {
   const div = document.createElement('div');
-  div.className = 'chat-bubble bot';
-  div.innerHTML = `<p style="color: #f87171;">❌ <strong>Error:</strong> ${escapeHtml(errorMsg)}</p>`;
+  div.className = 'chat-bubble bot error-bubble';
+
+  const isNetwork = /fetch|network|failed to fetch|load failed|econnrefused|enotfound/i.test(errorMsg);
+
+  let html = `
+    <div class="error-card">
+      <div class="error-header">
+        <span class="error-icon">⚠️</span>
+        <strong class="error-title">${isNetwork ? 'Connection / Server Unreachable' : 'Query Execution Error'}</strong>
+      </div>
+      <div class="error-body">
+        <p class="error-msg">${isNetwork ? 'Could not connect to the backend server.' : escapeHtml(errorMsg)}</p>
+  `;
+
+  if (isNetwork) {
+    html += `
+      <div class="error-troubleshoot">
+        <strong>💡 Common causes & quick fixes:</strong>
+        <ul>
+          <li><strong>Render Free-Tier Spin-Up:</strong> If hosted on Render free tier, web services sleep after 15 mins of inactivity. Cold starts take <strong>40–60 seconds</strong>. Please give it a few moments and hit Retry below!</li>
+          <li><strong>Local Server:</strong> If running locally, verify that <code>node src/server.js</code> or <code>npm start</code> is running in your terminal on port 3000.</li>
+          <li><strong>Network Connection:</strong> Check your internet connectivity or browser developer console (<code>F12</code>).</li>
+        </ul>
+      </div>
+    `;
+  }
+
+  if (failedQuestion) {
+    html += `
+      <div class="error-actions">
+        <button type="button" class="btn btn-retry" onclick="retryQuestion(${escapeHtml(JSON.stringify(failedQuestion))})">
+          🔄 Retry Query
+        </button>
+      </div>
+    `;
+  }
+
+  html += `
+      <details class="error-details">
+        <summary>Technical Details</summary>
+        <code>${escapeHtml(errorMsg)}</code>
+      </details>
+    </div>
+  </div>`;
+
+  div.innerHTML = html;
   chatHistory.appendChild(div);
   chatHistory.scrollTop = chatHistory.scrollHeight;
 }
+
+// Retry question function
+window.retryQuestion = function(text) {
+  if (!text) return;
+  chatInput.value = text;
+  chatForm.dispatchEvent(new Event('submit'));
+};
 
 // Quick Chips
 function askQuick(text) {
