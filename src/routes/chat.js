@@ -19,12 +19,13 @@ const router = express.Router();
 router.post('/chat', async (req, res) => {
   try {
     const question = req.body.question || req.body.message;
+    const history = Array.isArray(req.body.history) ? req.body.history : [];
 
     if (!question || typeof question !== 'string') {
       return res.status(400).json({ error: 'Question is required.' });
     }
 
-    const result = await processQuestion(question.trim());
+    const result = await processQuestion(question.trim(), history);
     res.json({
       success: true,
       ...result

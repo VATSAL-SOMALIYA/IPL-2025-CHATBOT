@@ -125,9 +125,10 @@ export function validateSql(sql) {
  * executes it, and returns results.
  * 
  * @param {string} userQuestion - User's cricket question
+ * @param {Array<{role: string, content: string}>} [history=[]] - Conversation history for multi-turn context
  * @returns {Promise<{ question: string, sql: string, rows: Array<Object>, rowCount: number, answer: string, provider: string }>}
  */
-export async function processQuestion(userQuestion) {
+export async function processQuestion(userQuestion, history = []) {
   const candidates = await getCandidateAiModels();
   const dialect = getDbDialect();
 
@@ -184,6 +185,16 @@ CRICKET TERMINOLOGY & CALCULATION RULES:
 11. Standings / Points Table:
     - Query points_table JOIN team ON points_table.team_id = team.team_id ORDER BY points DESC, nrr DESC.
 
+CONVERSATIONAL CONTEXT & PRONOUN RESOLUTION:
+- You will receive previous conversation turns when available.
+- When the user asks follow-up questions using pronouns like "he", "him", "his", "they", "them", "this player", "that team", "who won that match", resolve the entity from the preceding conversation.
+- EXAMPLE: If a previous turn asked about "Prabhsimran singh" and the user asks "What is total runs scored by him", resolve "him" to Prabhsimran Singh and filter by LOWER(p.name) LIKE LOWER('%Prabhsimran%').
+- CRITICAL: NEVER output placeholder templates such as <player_id>, <player_name>, [id], ..., or generic examples.
+- ALWAYS output concrete, fully executable SQL using actual schema names.
+- When filtering player names, ALWAYS use case-insensitive partial match:
+  LOWER(p.name) LIKE LOWER('%<player_name>%') or p.name ILIKE '%<player_name>%'
+  (e.g., LOWER(p.name) LIKE LOWER('%Prabhsimran%') or LOWER(p.name) LIKE LOWER('%Kohli%')).
+
 CRITICAL SQL SYNTAX RULES:
 - Write standard ANSI SQL compatible with both PostgreSQL and SQLite.
 - DO NOT use PostgreSQL-specific type casting like "::numeric" or "::text". Use standard "CAST(x AS FLOAT)" or multiply by "1.0" (e.g. "1.0 * x / y").
@@ -197,7 +208,20 @@ CRITICAL SQL SYNTAX RULES:
 - Never generate INSERT, UPDATE, DELETE, or DROP queries.
 - If the question cannot be answered from the schema, explain what information is missing.`;
 
-  const { HumanMessage, SystemMessage } = await import('@langchain/core/messages');
+  const { HumanMessage, SystemMessage, AIMessage } = await import('@langchain/core/messages');
+
+  // Build conversational message list
+  const messages = [new SystemMessage(systemPrompt)];
+  if (Array.isArray(history) && history.length > 0) {
+    for (const msg of history) {
+      if (msg.role === 'user' && msg.content) {
+        messages.push(new HumanMessage(String(msg.content)));
+      } else if ((msg.role === 'assistant' || msg.role === 'bot') && msg.content) {
+        messages.push(new AIMessage(String(msg.content)));
+      }
+    }
+  }
+  messages.push(new HumanMessage(userQuestion));
 
   let sql = '';
   let activeProvider = '';
@@ -208,14 +232,30 @@ CRITICAL SQL SYNTAX RULES:
     try {
       activeProvider = candidate.provider;
       const model = candidate.getModel();
-      const response = await model.invoke([
-        new SystemMessage(systemPrompt),
-        new HumanMessage(userQuestion)
-      ]);
+      const response = await model.invoke(messages);
 
       const rawContent = response.content.toString();
       const sqlMatch = rawContent.match(/```sql([\s\S]*?)```/i);
-      sql = sqlMatch ? sqlMatch[1].trim() : rawContent.trim();
+
+      if (sqlMatch) {
+        sql = sqlMatch[1].trim();
+      } else {
+        const trimmed = rawContent.trim();
+        // If the model returned bare SQL without code blocks
+        if (/^(SELECT|WITH)\b/i.test(trimmed)) {
+          sql = trimmed;
+        } else {
+          // Model returned a conversational explanation / clarification
+          return {
+            question: userQuestion,
+            sql: null,
+            rows: [],
+            rowCount: 0,
+            answer: trimmed,
+            provider: candidate.provider
+          };
+        }
+      }
 
       if (sql) {
         lastError = null;
@@ -233,6 +273,12 @@ CRITICAL SQL SYNTAX RULES:
 
   // Strip trailing semicolon if needed
   sql = sql.replace(/;+\s*$/, '');
+
+  // Guard against unreplaced template placeholders (e.g. <player_id>)
+  const placeholderMatch = sql.match(/<[^>]+>|\[[a-zA-Z_]+\]/);
+  if (placeholderMatch) {
+    throw new Error(`AI generated a template placeholder (${placeholderMatch[0]}) instead of a concrete query. Please specify the player or match name.`);
+  }
 
   // Validate SQL strictly
   const validatedSql = validateSql(sql);

@@ -12,6 +12,9 @@ const askBtn = document.getElementById('ask-btn');
 const pointsBody = document.getElementById('points-body');
 const matchesCount = document.getElementById('matches-count');
 
+// Conversation history buffer for multi-turn questions
+const chatMessages = [];
+
 // Load initial points table & stats
 document.addEventListener('DOMContentLoaded', () => {
   fetchStats();
@@ -78,7 +81,10 @@ async function handleChatSubmit(e) {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question })
+      body: JSON.stringify({
+        question,
+        history: chatMessages.slice(-6)
+      })
     });
 
     if (!res.ok) {
@@ -96,6 +102,9 @@ async function handleChatSubmit(e) {
     loadingDiv.remove();
 
     if (data.success) {
+      // Record conversation turn for subsequent follow-up questions
+      chatMessages.push({ role: 'user', content: question });
+      chatMessages.push({ role: 'assistant', content: data.answer || 'Completed.' });
       appendBotResponse(data);
     } else {
       appendBotError(data.error || 'Failed to process question.', question);
