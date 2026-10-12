@@ -32,6 +32,133 @@ const schemaPath = path.resolve(__dirname, '../schema.sql');
 const schemaSql = fs.readFileSync(schemaPath, 'utf8');
 
 /**
+ * Team abbreviations and nicknames mapping to authentic database schema.
+ */
+export const CRICKET_TEAM_MAP = {
+  gt: { id: 1, name: 'Gujarat Titans' },
+  gujarat: { id: 1, name: 'Gujarat Titans' },
+  titans: { id: 1, name: 'Gujarat Titans' },
+  rcb: { id: 2, name: 'Royal Challengers Bengaluru' },
+  bangalore: { id: 2, name: 'Royal Challengers Bengaluru' },
+  bengaluru: { id: 2, name: 'Royal Challengers Bengaluru' },
+  challengers: { id: 2, name: 'Royal Challengers Bengaluru' },
+  mi: { id: 3, name: 'Mumbai Indians' },
+  mumbai: { id: 3, name: 'Mumbai Indians' },
+  indians: { id: 3, name: 'Mumbai Indians' },
+  srh: { id: 4, name: 'Sunrisers Hyderabad' },
+  hyderabad: { id: 4, name: 'Sunrisers Hyderabad' },
+  sunrisers: { id: 4, name: 'Sunrisers Hyderabad' },
+  lsg: { id: 5, name: 'Lucknow Super Giants' },
+  lucknow: { id: 5, name: 'Lucknow Super Giants' },
+  dc: { id: 6, name: 'Delhi Capitals' },
+  delhi: { id: 6, name: 'Delhi Capitals' },
+  capitals: { id: 6, name: 'Delhi Capitals' },
+  daredevils: { id: 6, name: 'Delhi Capitals' },
+  csk: { id: 7, name: 'Chennai Super Kings' },
+  chennai: { id: 7, name: 'Chennai Super Kings' },
+  superkings: { id: 7, name: 'Chennai Super Kings' },
+  pbks: { id: 8, name: 'Punjab Kings' },
+  kxip: { id: 8, name: 'Punjab Kings' },
+  punjab: { id: 8, name: 'Punjab Kings' },
+  kkr: { id: 9, name: 'Kolkata Knight Riders' },
+  kolkata: { id: 9, name: 'Kolkata Knight Riders' },
+  knightriders: { id: 9, name: 'Kolkata Knight Riders' },
+  rr: { id: 10, name: 'Rajasthan Royals' },
+  rajasthan: { id: 10, name: 'Rajasthan Royals' },
+  royals: { id: 10, name: 'Rajasthan Royals' }
+};
+
+/**
+ * Common cricket player nicknames, short forms, and aliases.
+ */
+export const CRICKET_PLAYER_MAP = {
+  prabh: 'Prabhsimran Singh',
+  prabhsimran: 'Prabhsimran Singh',
+  vk: 'Virat Kohli',
+  kohli: 'Virat Kohli',
+  chiku: 'Virat Kohli',
+  msd: 'MS Dhoni',
+  dhoni: 'MS Dhoni',
+  thala: 'MS Dhoni',
+  mahi: 'MS Dhoni',
+  rohit: 'Rohit Sharma',
+  hitman: 'Rohit Sharma',
+  bumrah: 'Jasprit Bumrah',
+  boom: 'Jasprit Bumrah',
+  sky: 'Suryakumar Yadav',
+  surya: 'Suryakumar Yadav',
+  suryakumar: 'Suryakumar Yadav',
+  kl: 'KL Rahul',
+  pant: 'Rishabh Pant',
+  rishabh: 'Rishabh Pant',
+  hardik: 'Hardik Pandya',
+  pandya: 'Hardik Pandya',
+  gill: 'Shubman Gill',
+  shubman: 'Shubman Gill',
+  jaddu: 'Ravindra Jadeja',
+  jadeja: 'Ravindra Jadeja',
+  ash: 'Ravichandran Ashwin',
+  ashwin: 'Ravichandran Ashwin',
+  chahal: 'Yuzvendra Chahal',
+  yuzi: 'Yuzvendra Chahal',
+  kuldeep: 'Kuldeep Yadav',
+  kulcha: 'Kuldeep Yadav',
+  bhuvi: 'Bhuvneshwar Kumar',
+  bhuvneshwar: 'Bhuvneshwar Kumar',
+  siraj: 'Mohammed Siraj',
+  miyan: 'Mohammed Siraj',
+  shami: 'Mohammed Shami',
+  lala: 'Mohammed Shami',
+  russell: 'Andre Russell',
+  dre: 'Andre Russell',
+  narine: 'Sunil Narine',
+  buttler: 'Jos Buttler',
+  jos: 'Jos Buttler',
+  head: 'Travis Head',
+  travis: 'Travis Head',
+  klaasen: 'Heinrich Klaasen',
+  pooran: 'Nicholas Pooran',
+  rinku: 'Rinku Singh',
+  sudharsan: 'Sai Sudharsan',
+  arshdeep: 'Arshdeep Singh',
+  ruturaj: 'Ruturaj Gaikwad',
+  gaikwad: 'Ruturaj Gaikwad',
+  dube: 'Shivam Dube',
+  ishan: 'Ishan Kishan',
+  kishan: 'Ishan Kishan',
+  cummins: 'Pat Cummins',
+  starc: 'Mitchell Starc',
+  axar: 'Axar Patel',
+  bapu: 'Axar Patel',
+  varun: 'Varun Chakaravarthy',
+  mayank: 'Mayank Yadav'
+};
+
+/**
+ * Extracts recognized cricket team abbreviations or player nicknames from user input.
+ */
+export function extractCricketContext(text) {
+  if (!text) return '';
+  const tokens = text.toLowerCase().match(/[a-z0-9]+/g) || [];
+  const detected = [];
+
+  for (const t of tokens) {
+    if (CRICKET_TEAM_MAP[t]) {
+      const team = CRICKET_TEAM_MAP[t];
+      detected.push(`Team "${t.toUpperCase()}" refers to "${team.name}" (team_id = ${team.id}). Filter using t.team_id = ${team.id} or LOWER(t.tname) = '${team.name.toLowerCase()}'. NEVER write LIKE '%${t}%'.`);
+    }
+    if (CRICKET_PLAYER_MAP[t]) {
+      const player = CRICKET_PLAYER_MAP[t];
+      detected.push(`Player "${t}" refers to "${player}". Filter by LOWER(p.name) LIKE LOWER('%${player}%').`);
+    }
+  }
+
+  const unique = [...new Set(detected)];
+  if (unique.length === 0) return '';
+  return `\nRESOLVED CRICKET ENTITY HINTS FOR THIS QUESTION:\n${unique.map(u => `- ${u}`).join('\n')}\n`;
+}
+
+/**
  * Builds candidate AI model providers in priority order:
  * 1. Groq (primary)
  * 2. Gemini (fallback)
@@ -184,7 +311,84 @@ CRICKET TERMINOLOGY & CALCULATION RULES:
     - In final_result: win_run_margin is set when the winning team defended (batted first); win_wicket_margin is set when the winning team chased (batted second).
 11. Standings / Points Table:
     - Query points_table JOIN team ON points_table.team_id = team.team_id ORDER BY points DESC, nrr DESC.
+12. Common Cricket Terms & Milestones:
+    - Duck / Out for Zero: ppm.runs = 0
+    - Century / Ton / 100: ppm.runs >= 100
+    - Half Century / Fifty / 50: ppm.runs >= 50
+    - Fifer / 5-wicket haul: ppm.wickets_taken >= 5
+    - 4-wicket haul: ppm.wickets_taken >= 4
+    - Maximums / Sixers: ppm.sixes
+    - Boundaries: ppm.fours and ppm.sixes
+    - Powerplay overs: overs 1 to 6 in per_ball_data (over_no <= 6)
+    - Death overs: overs 16 to 20 in per_ball_data (over_no >= 16)
+    - Middle overs: overs 7 to 15 in per_ball_data (over_no BETWEEN 7 AND 15)
+    - Maiden over: an over with 0 runs conceded
+    - POTM / MOM / Man of the Match: final_result.player_of_the_match
+    - Captain: team.captain_id
 
+TEAM ABBREVIATIONS & NICKNAME MAPPING:
+Every IPL franchise has standard short forms used by fans. ALWAYS map abbreviations to the exact team_id or full team name (tname):
+- "GT" / "Gujarat" / "Titans" -> team_id = 1, tname = 'Gujarat Titans'
+- "RCB" / "Bangalore" / "Bengaluru" / "Challengers" -> team_id = 2, tname = 'Royal Challengers Bengaluru'
+- "MI" / "Mumbai" / "Indians" -> team_id = 3, tname = 'Mumbai Indians'
+- "SRH" / "Hyderabad" / "Sunrisers" -> team_id = 4, tname = 'Sunrisers Hyderabad'
+- "LSG" / "Lucknow" / "Super Giants" -> team_id = 5, tname = 'Lucknow Super Giants'
+- "DC" / "Delhi" / "Capitals" / "Daredevils" -> team_id = 6, tname = 'Delhi Capitals'
+- "CSK" / "Chennai" / "Super Kings" -> team_id = 7, tname = 'Chennai Super Kings'
+- "PBKS" / "KXIP" / "Punjab" / "Kings XI" -> team_id = 8, tname = 'Punjab Kings'
+- "KKR" / "Kolkata" / "Knight Riders" -> team_id = 9, tname = 'Kolkata Knight Riders'
+- "RR" / "Rajasthan" / "Royals" -> team_id = 10, tname = 'Rajasthan Royals'
+
+MANDATORY TEAM FILTERING RULES:
+- NEVER write "LOWER(t.tname) LIKE '%gt%'" or "%rcb%" or "%csk%" or "%mi%"! Short forms are NOT substrings of full names and will return 0 rows.
+- Always filter using the exact team_id OR full name:
+  - For "GT": write "t.team_id = 1" or "LOWER(t.tname) = 'gujarat titans'" or "LOWER(t.tname) LIKE '%gujarat%'"
+  - For "RCB": write "t.team_id = 2" or "LOWER(t.tname) LIKE '%royal challengers%'"
+  - For "CSK": write "t.team_id = 7" or "LOWER(t.tname) LIKE '%chennai%'"
+  - For "MI": write "t.team_id = 3" or "LOWER(t.tname) LIKE '%mumbai%'"
+  - For "SRH": write "t.team_id = 4" or "LOWER(t.tname) LIKE '%sunrisers%'"
+  - For "LSG": write "t.team_id = 5" or "LOWER(t.tname) LIKE '%lucknow%'"
+  - For "DC": write "t.team_id = 6" or "LOWER(t.tname) LIKE '%delhi%'"
+  - For "PBKS": write "t.team_id = 8" or "LOWER(t.tname) LIKE '%punjab%'"
+  - For "KKR": write "t.team_id = 9" or "LOWER(t.tname) LIKE '%kolkata%'"
+  - For "RR": write "t.team_id = 10" or "LOWER(t.tname) LIKE '%rajasthan%'"
+
+PLAYER NICKNAMES & SHORT FORMS:
+- "Prabh" -> Prabhsimran Singh
+- "VK" / "King Kohli" / "Chiku" / "Kohli" -> Virat Kohli
+- "MSD" / "Thala" / "Mahi" / "Dhoni" -> MS Dhoni
+- "Hitman" / "Ro" / "Rohit" -> Rohit Sharma
+- "Boom" / "Boom Boom" / "Bumrah" -> Jasprit Bumrah
+- "SKY" / "Surya" -> Suryakumar Yadav
+- "KL" -> KL Rahul
+- "Pant" / "Rishabh" -> Rishabh Pant
+- "Hardik" -> Hardik Pandya
+- "Gill" -> Shubman Gill
+- "Jaddu" / "Sir Jadeja" -> Ravindra Jadeja
+- "Ash" / "Ashwin" -> Ravichandran Ashwin
+- "Chahal" / "Yuzi" -> Yuzvendra Chahal
+- "Kuldeep" / "Kulcha" -> Kuldeep Yadav
+- "Bhuvi" -> Bhuvneshwar Kumar
+- "Siraj" / "Miyan" -> Mohammed Siraj
+- "Shami" / "Lala" -> Mohammed Shami
+- "Russell" / "Dre Russ" -> Andre Russell
+- "Narine" -> Sunil Narine
+- "Buttler" / "Jos" -> Jos Buttler
+- "Head" -> Travis Head
+- "Klaasen" -> Heinrich Klaasen
+- "Pooran" -> Nicholas Pooran
+- "Rinku" -> Rinku Singh
+- "Sai" / "Sudharsan" -> Sai Sudharsan
+- "Arshdeep" -> Arshdeep Singh
+- "Ruturaj" -> Ruturaj Gaikwad
+- "Dube" -> Shivam Dube
+- "Ishan" -> Ishan Kishan
+- "Cummins" -> Pat Cummins
+- "Starc" -> Mitchell Starc
+- "Axar" / "Bapu" -> Axar Patel
+- "Varun" -> Varun Chakaravarthy
+- "Mayank" -> Mayank Yadav
+${extractCricketContext(userQuestion)}
 CONVERSATIONAL CONTEXT & PRONOUN RESOLUTION:
 - You will receive previous conversation turns when available.
 - When the user asks follow-up questions using pronouns like "he", "him", "his", "they", "them", "this player", "that team", "who won that match", resolve the entity from the preceding conversation.
